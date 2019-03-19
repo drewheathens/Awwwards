@@ -14,7 +14,7 @@ Gender=(
     )
 
 class Profile(models.Model):
-    profilePhotos = models.ImageField(upload_to='profilePhotos/')
+    profilePhotos = models.ImageField(upload_to='media/profilePhotos/')
     bio = HTMLField()
     name = models.CharField(max_length=255)
     username = models.ForeignKey(User,on_delete=models.CASCADE)
@@ -42,7 +42,7 @@ def search_profile(cls,search_term):
 
 
 class Post(models.Model):
-    profile_picture = models.ImageField(upload_to = 'profilephotos/')
+    # profile_picture = models.ImageField(upload_to = 'media/profilephotos/')
     caption = models.CharField(max_length=3000)
     username = models.ForeignKey(User,on_delete=models.CASCADE)
     post = models.ImageField(upload_to='posts/')
@@ -57,7 +57,7 @@ class Post(models.Model):
 
     def save_post(self):
     	self.save()
-    	
+
     @classmethod
     def delete_post(cls,location):
         cls.objects.filter(location=location).delete()
