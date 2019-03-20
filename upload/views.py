@@ -5,6 +5,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse,Http404,HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
 from .models import Post,Profile
 from .forms import *
 import datetime as dt
@@ -17,17 +18,19 @@ from django.db.models import Q
 
 # Create your views here.
 
-# def signup(request):
-#    if request.method=='POST':
-#        form = UserCreationForm(request.POST)
+#first page - signup page
+def signup(request):
+    if request.method=='POST':
+        form = UserCreationForm(request.POST)
 
-#        if form.is_valid():
-#            form.save()
-#        return redirect('login')
-#    else:
-#        form = UserCreationForm()
+        if form.is_valid():
+            form.save()
+        return redirect('login')
+    else:
+        form = UserCreationForm()
 
-#    return render(request,'login.html',locals())
+    return render(request,'signup.html',locals())
+
 
 @login_required(login_url='/accounts/login/')
 def search_results(request):
@@ -153,4 +156,4 @@ def new_project(request):
     else:
         form = ProjectForm()
 
-    return render(request,'new_project.html',{"form":form})
+    return render(request,'index.html',{"form":form})
