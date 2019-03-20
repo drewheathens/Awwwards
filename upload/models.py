@@ -73,6 +73,6 @@ class Project(models.Model):
     screenshot2 = models.ImageField(upload_to='screenshots/')
     screenshot3 = models.ImageField(upload_to='screenshots/')
     screenshot4 = models.ImageField(upload_to='screenshots/')
-    
+    post_date = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return self.title
