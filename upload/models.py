@@ -63,3 +63,16 @@ class Post(models.Model):
         cls.objects.filter(location=location).delete()
 
 		
+class Project(models.Model):
+    title = models.CharField(max_length=150)
+    landing_page = models.ImageField(upload_to='landingpage/')
+    description = HTMLField()
+    link= models.CharField(max_length=255)
+    username = models.ForeignKey(User,on_delete=models.CASCADE)
+    screenshot1 = models.ImageField(upload_to='screenshots/')
+    screenshot2 = models.ImageField(upload_to='screenshots/')
+    screenshot3 = models.ImageField(upload_to='screenshots/')
+    screenshot4 = models.ImageField(upload_to='screenshots/')
+    
+    def __str__(self):
+        return self.title

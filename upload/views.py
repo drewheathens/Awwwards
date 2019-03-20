@@ -7,6 +7,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from .models import Post,Profile
 from .forms import *
+import datetime as dt
+from django.http import JsonResponse
+import json
+from django.db.models import Q
+# from .forms import ProfileForm, ProjectsForm
+
 
 
 # Create your views here.
@@ -23,19 +29,18 @@ from .forms import *
 
 #    return render(request,'login.html',locals())
 
-# @login_required(login_url='/accounts/login/')
+@login_required(login_url='/accounts/login/')
 def search_results(request):
-	current_user = request.user
-	profile =Profile.objects.get(username=current_user)
-	if 'profile' in request.GET and request.GET["profile"]:
-		search_term = request.GET.get("profile")
-		searched_profiles = Profile.search_profile(search_term)
-		message = f"{search_term}"
+    if 'user' in request.GET and request.GET["user"]:
+        search_term = request.GET.get("user")
+        searched_users = Profile.search_profile(search_term)
+        message=f"{search_term}"
 
-		return render(request, 'search.html',{"message":message,"users": searched_users})
-	else:
-		message = "You haven't searched for any term"
-		return render(request, 'search.html',{"message":message})
+        return render(request,'search.html',{"message":message,"users":searched_users})
+
+    else:
+        message="You haven't searched for any term"
+        return render(request,'search.html',{"message":message})
 
 @login_required(login_url='/accounts/login/')
 def edit_profile(request):
@@ -132,3 +137,20 @@ def profile(request):
         return redirect('editProfile')
 
     return render(request,"profile.html",{"profile":profile,"posts":posts,"form":form,"post_number":post_number,"title":title,"username":username})
+
+
+#@login_required(login_url='/accounts/login/')
+def new_project(request):
+    current_user = request.user
+    profile =Profile.objects.get(username=current_user)
+    if request.method =='POST':
+        form = ProjectForm(request.POST,request.FILES)
+        if form.is_valid():
+            project = form.save(commit=False)
+            project.username = current_user
+            project.save()
+
+    else:
+        form = ProjectForm()
+
+    return render(request,'new_project.html',{"form":form})
