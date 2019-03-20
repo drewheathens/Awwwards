@@ -1,19 +1,16 @@
 from django import forms
-from .models import Post,Profile,Project
-class PostForm(forms.ModelForm):
-    class Meta:
-        model=Post
-        exclude=['username','post_date','likes','profilePhotos']
+from .models import Project,Profile
 
+class ProjectForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        exclude = ['profile','usability','design','content']
 
 class ProfileForm(forms.ModelForm):
     class Meta:
-        model=Profile
-        exclude=['username']
-
-class ProjectsForm(forms.ModelForm):
-
+        model = Profile
+        exclude = ['profile']
+class VoteForm(forms.ModelForm):
     class Meta:
         model = Project
-
-        exclude=['username','post_date']
+        exclude = ['link','description','profile','image','title']

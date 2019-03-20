@@ -1,67 +1,36 @@
-{% extends 'base.html' %}
+{%extends 'base.html'%}
 {% load bootstrap3 %}
-{% load static %}
 {% load staticfiles %}
+{% load static%}
 
 {% block content %}
 {{block.super}}
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- <link rel="stylesheet" href="../static/css/profile.css"> -->
-
-
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-
-</head>
-
 <div class="container">
-
-</div>
-<!-- End of container -->
-
-</head>
-
-
-
-<div class="container">
-
-  <div class="gallery">
-
-    {% for post in new_post %}
-
-    <div class="gallery-item" tabindex="0" data-toggle="modal" data-target="#{{post.id}}">
+  <div class="row">
+      <style>
+        .pic{
+          height: 500px;
+          width: 200px;
+        }
+      </style>
 
 
-      <img src="{{post.new_post.url}}?w=500&h=500&fit=crop" class="gallery-image">
-      <div class="gallery-item-info">
+  <div class="row">
+    {% for post in projects %}
+    <div class="col-md-4">
+      <h5 class="text-center"> {{post.title}}</h5>
+      <a href="{% url 'projects' post.id %}"><img src="{{post.image.url}}" class="img-responsive" alt="Project" ></a>
 
-        </div>
-          
     </div>
-</div>
+    {% endfor %}
   </div>
-  {% endfor %}
+  <br><br>
+  <div class="row">
+
+  </div>
+</div>
+
+
+</div>
+
 {% endblock %}
-<body>
-
-
-      <form action="{% url 'newPost'%}" method="post"  enctype="multipart/form-data">
-
-        {% csrf_token%}
-        {% bootstrap_form form %}
-        <div class="form-group text-center">
-          <input type="submit" class="btn btn-primary sign-up-button" value="Share">
-        </div>
-        <input type="hidden" name="next" value="{{next}}">
-      </form>
-    </div>
-  </div>
-
-   {% block scripts %}
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-  {% bootstrap_javascript %} {% endblock %}
-
-</body>
-

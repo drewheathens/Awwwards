@@ -1,159 +1,140 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
-from django.shortcuts import render, redirect
-from django.http import HttpResponse,Http404,HttpResponseRedirect
+from django.shortcuts import render,redirect
+from django.http  import HttpResponse,Http404
+from .models import Project,Profile
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
-from .models import Post,Profile
-from .forms import *
-import datetime as dt
-from django.http import JsonResponse
-import json
-from django.db.models import Q
-# from .forms import ProfileForm, ProjectsForm
-
-
+from .forms import ProjectForm,ProfileForm, VoteForm
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .serializer import ProjectSerializer, ProfileSerializer
 
 # Create your views here.
-
-#first page - signup page
-def signup(request):
-    if request.method=='POST':
-        form = UserCreationForm(request.POST)
-
-        if form.is_valid():
-            form.save()
-        return redirect('login')
-    else:
-        form = UserCreationForm()
-
-    return render(request,'signup.html',locals())
-
-
 @login_required(login_url='/accounts/login/')
-def search_results(request):
-    if 'user' in request.GET and request.GET["user"]:
-        search_term = request.GET.get("user")
-        searched_users = Profile.search_profile(search_term)
-        message=f"{search_term}"
-
-        return render(request,'search.html',{"message":message,"users":searched_users})
-
-    else:
-        message="You haven't searched for any term"
-        return render(request,'search.html',{"message":message})
-
-@login_required(login_url='/accounts/login/')
-def edit_profile(request):
-    current_user=request.user
-    if request.method =='POST':
-        form=ProfileForm(request.POST,request.FILES)
-        if form.is_valid():
-            profile=form.save(commit=False)
-            profile.username = current_user
-            profile.save()
-
-    else:
-        form=ProfileForm()
-
-    return render(request,'editProfile.html',{"form":form})
-
-
 def index(request):
-    posts = Post.objects.all()
-    # form=CommentForm()
-
-    return render(request,"index.html",{"posts":posts})
-
-@login_required(login_url='/accounts/login/')
-def userprofile(request,profile_id):
-    current_user=request.user
-
-    try:
-    	all_posts=Post.objects.all()
-    	profile = Profile.objects.get(id=profile_id)
-    	prof_username = profile.username
-    	posts = Post.objects.filter(username=prof_username)
-    except:
-        raise ObjectDoesNotExist()
-    return render(request,"userProfile.html",{"profile":profile,"posts":posts})
-
-@login_required(login_url='/accounts/login/')
-def change_profile(request,username):
     current_user = request.user
+    projects = Project.get_all()
+    return render(request,'index.html',{'projects':projects})
+
+def project(request,project_id):
+    project = Project.objects.get(id = project_id)
+    rating = round(((project.design + project.usability + project.content)/3),2)
     if request.method == 'POST':
-        form = ProfileForm(request.POST,request.FILES)
-        if form.is_valid():
-            details = form.save(commit=False)
-            details.username = current_user
-            details.save()
-        return redirect('changeProfile')
-    elif Profile.objects.get(username=current_user):
-        profile = Profile.objects.get(username=current_user)
-        form = ProfileForm(instance=profile)
+        form = VoteForm(request.POST)
+        if form.is_valid:
+            if project.design == 1:
+                project.design = int(request.POST['design'])
+            else:
+                project.design = (project.design + int(request.POST['design']))/2
+            if project.usability == 1:
+                project.usability = int(request.POST['usability'])
+            else:
+                project.usability = (project.design + int(request.POST['usability']))/2
+            if project.content == 1:
+                project.content = int(request.POST['content'])
+            else:
+                project.content = (project.design + int(request.POST['content']))/2
+            project.save()
     else:
-        form = ProfileForm()
-
-    return render(request,'changeProfile.html',{"form":form})
+        form = VoteForm()
+    return render(request,'project.html',{'form':form,'project':project,'rating':rating})
 
 @login_required(login_url='/accounts/login/')
-def new_post(request):
-    current_user = request.user
-    profile = Profile.objects.get(username=current_user)
-
-    if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES)
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.username = current_user
-            post.profilePhotos = profile.profilePhotos
-
-
-        return redirect('newPost')
-
-    else:
-    	form = PostForm()
-
-    return render(request, 'newPost.html',{"form":form})
-        
-@login_required(login_url='/accounts/login/')
-def profile(request):
-    current_user = request.user
-    current_user_id=request.user.id
-
-    post_id = None
-    if request.method == 'GET':
-        post_id = request.GET.get('post_id')
-
-        return redirect('profile.html')
-
-    try:
-        profile = Profile.objects.get(username=current_user)
-        posts = Post.objects.filter(username_id=current_user_id)
-        title = profile.name
-        username = profile.username
-        post_number= len(posts)
-
-    except ObjectDoesNotExist:
-        return redirect('editProfile')
-
-    return render(request,"profile.html",{"profile":profile,"posts":posts,"form":form,"post_number":post_number,"title":title,"username":username})
-
-
-#@login_required(login_url='/accounts/login/')
 def new_project(request):
     current_user = request.user
-    profile =Profile.objects.get(username=current_user)
-    if request.method =='POST':
-        form = ProjectForm(request.POST,request.FILES)
+    if request.method == 'POST':
+        form = ProjectForm(request.POST, request.FILES)
         if form.is_valid():
             project = form.save(commit=False)
-            project.username = current_user
+            project.profile = current_user
             project.save()
+        return redirect('indexPage')
 
     else:
         form = ProjectForm()
+    return render(request, 'new_project.html', {"form": form})
 
-    return render(request,'index.html',{"form":form})
+def vote_project(request, project_id):
+    project = Project.objects.get(id=project_id)
+    rating = round(((project.design + project.usability + project.content)/3),2)
+    if request.method == 'POST':
+        form = VoteForm(request.POST)
+        if form.is_valid:
+            if project.design == 1:
+                project.design = int(request.POST['design'])
+            else:
+                project.design = (project.design + int(request.POST['design']))/2
+            if project.usability == 1:
+                project.usability = int(request.POST['usability'])
+            else:
+                project.usability = (project.design + int(request.POST['usability']))/2
+            if project.content == 1:
+                project.content = int(request.POST['content'])
+            else:
+                project.content = (project.design + int(request.POST['content']))/2
+            project.save()
+    else:
+        form = VoteForm()
+    return render(request,'vote.html',{'form':form,'project':project,'rating':rating})
+
+
+def profile(request):
+    current_user = request.user
+    projects = Project.objects.filter(profile=current_user).all()
+    profile = Profile.objects.filter(profile=current_user)
+
+    if len(profile)<1:
+        profile = "No profile"
+    else:
+        profile = Profile.objects.get(profile=current_user)
+
+    return render(request, 'profile.html',locals())
+
+def edit_profile(request):
+    current_user = request.user
+    print(current_user)
+    profile=Profile.objects.get(profile=current_user)
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, request.FILES,instance=profile)
+        if form.is_valid():
+            profile = form.save(commit = False)
+            profile.profile = current_user
+            profile.save()
+        return redirect('Profile')
+    else:
+        form = ProfileForm(instance=profile)
+    return render(request,'editProfile.html',{'form':form})
+
+def search_results(request):
+
+    if 'project' in request.GET and request.GET["project"]:
+        search_term = request.GET.get("project")
+        searched_projects = Project.search_by_title(search_term)
+        message = f"{search_term}"
+
+        return render(request, 'search.html',{"message":message,"projects": searched_projects})
+
+    else:
+        message = "You haven't searched for any term"
+        return render(request, 'search.html',{"message":message})
+
+def search_project(request,project_id):
+    try :
+        project = Project.objects.get(id = project_id)
+
+    except ObjectDoesNotExist:
+        raise Http404()
+        # return render(request, 'no_project.html')
+
+    return render(request, 'project-detail.html', {'project':project})
+
+class ProjectList(APIView):
+    def get(self, request, format=None):
+        all_project =Project.objects.all()
+        serializers = ProjectSerializer(all_project, many=True)
+        return Response(serializers.data)
+
+class ProfileList(APIView):
+    def get(self, request, format=None):
+        all_profile =Profile.objects.all()
+        serializers = ProfileSerializer(all_profile, many=True)
+        return Response(serializers.data)
